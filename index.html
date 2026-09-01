@@ -3,57 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#23313a">
+  <meta name="theme-color" content="#f4f1ea">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Evan勤務狀態">
-  <title>Evan勤務狀態</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="勤務狀態">
+  <title>勤務狀態</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+
   <style>
-    * { box-sizing:border-box; }
-    html,body { margin:0; min-height:100%; }
-    body {
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
-      background:#f4f1ea; color:#1f2933;
-      display:grid; place-items:center;
-      padding:28px;
+    html, body {
+      width:100%;
+      height:100%;
+      margin:0;
+      padding:0;
+      overflow:hidden;
+      background:#f4f1ea;
     }
-    .card {
-      width:min(100%,420px); text-align:center;
-      background:#fff; border-radius:28px; padding:28px 24px;
-      box-shadow:0 16px 42px rgba(40,47,54,.10);
+
+    #dutyApp {
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+      background:#f4f1ea;
     }
-    .icon { width:92px; height:92px; border-radius:22px; display:block; margin:0 auto 18px; }
-    h1 { margin:0 0 8px; font-size:25px; }
-    p { margin:0 0 20px; color:#73808c; line-height:1.7; font-size:14px; }
-    a {
-      display:block; text-decoration:none; color:#fff; background:#23313a;
-      border-radius:16px; padding:14px 18px; font-weight:750;
-    }
-    .hint { margin-top:16px; font-size:12px; color:#98a1a9; }
   </style>
 </head>
 <body>
-  <main class="card">
-    <img class="icon" src="apple-touch-icon.png" alt="">
-    <h1>勤務狀態</h1>
-    <p id="message">請先把這個頁面加入 iPhone 主畫面。之後從主畫面開啟時，會自動進入勤務狀態。</p>
-    <a href="https://script.google.com/macros/s/AKfycbybu_UsHPDHXHCxfT_1zLsItnlKZe_et8rtFsqCd7Or5HKK9ewlpnz-vDhjw9P-9Vl1/exec">現在開啟勤務狀態</a>
-    <div class="hint">Safari → 分享 → 加入主畫面</div>
-  </main>
-
-  <script>
-    const DUTY_URL = "https://script.google.com/macros/s/AKfycbybu_UsHPDHXHCxfT_1zLsItnlKZe_et8rtFsqCd7Or5HKK9ewlpnz-vDhjw9P-9Vl1/exec";
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-
-    if (isStandalone) {
-      document.getElementById('message').textContent = '正在開啟勤務狀態…';
-      setTimeout(() => window.location.replace(DUTY_URL), 120);
-    }
-  </script>
+  <iframe
+    id="dutyApp"
+    src="https://script.google.com/macros/s/AKfycbybu_UsHPDHXHCxfT_1zLsItnlKZe_et8rtFsqCd7Or5HKK9ewlpnz-vDhjw9P-9Vl1/exec"
+    title="勤務狀態"
+    allow="fullscreen"
+  ></iframe>
 </body>
 </html>

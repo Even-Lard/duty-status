@@ -1,45 +1,477 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <base target="_top">
+  <meta charset="UTF-8">
   <meta name="theme-color" content="#f4f1ea">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="勤務狀態">
-  <title>勤務狀態</title>
-
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="icon" type="image/png" href="./icon-192.png">
-  <link rel="manifest" href="./manifest.webmanifest">
-
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="https://drive.google.com/uc?export=view&id=1eI2OfEwU18DFRykMcNCV27BN-TDylY-J">
+  <link rel="icon" type="image/png" href="https://drive.google.com/uc?export=view&id=1eI2OfEwU18DFRykMcNCV27BN-TDylY-J">
   <style>
-    html, body {
-      width:100%;
-      height:100%;
-      margin:0;
-      padding:0;
-      overflow:hidden;
-      background:#f4f1ea;
+    :root {
+      --bg: #f4f1ea;
+      --card: rgba(255,255,255,.88);
+      --ink: #1f2933;
+      --muted: #73808c;
+      --line: rgba(31,41,51,.08);
+      --shadow: 0 16px 42px rgba(40,47,54,.10);
+      --green: #1f9d68;
+      --orange: #e97824;
+      --red: #d85145;
+      --blue: #3978a8;
     }
 
-    #dutyApp {
-      position:fixed;
-      inset:0;
-      width:100%;
-      height:100%;
-      border:0;
-      display:block;
-      background:#f4f1ea;
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255,255,255,.9), transparent 34%),
+        linear-gradient(180deg, #f7f4ee 0%, var(--bg) 100%);
+      color: var(--ink);
+      -webkit-tap-highlight-color: transparent;
     }
+
+    .app {
+      width: min(100%, 540px);
+      margin: 0 auto;
+      padding: max(22px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding: 0 3px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+
+    .crest {
+      width: 38px; height: 38px; border-radius: 13px;
+      display: grid; place-items: center;
+      background: #222b33; color: #fff;
+      box-shadow: 0 8px 20px rgba(31,41,51,.16);
+      font-size: 20px;
+    }
+
+    .brand-text strong { display:block; font-size:15px; letter-spacing:.04em; }
+    .brand-text span { display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+
+    .refresh {
+      border: 0; background: rgba(255,255,255,.72); color: var(--ink);
+      width: 38px; height: 38px; border-radius: 13px;
+      font-size: 18px; cursor:pointer; box-shadow: 0 5px 16px rgba(40,47,54,.06);
+    }
+    .refresh.loading { animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hero {
+      position: relative; overflow: hidden;
+      border-radius: 28px; padding: 27px 24px 24px;
+      color: white; min-height: 208px;
+      box-shadow: var(--shadow);
+      background: linear-gradient(135deg, #23313a, #384b56);
+      margin-bottom: 15px;
+    }
+    .hero::after {
+      content:""; position:absolute; width:190px; height:190px; border-radius:50%;
+      right:-70px; top:-82px; background: rgba(255,255,255,.07);
+    }
+    .hero.out { background: linear-gradient(135deg, #bb443c, #e46b47); }
+    .hero.off { background: linear-gradient(135deg, #68737b, #8b959b); }
+
+    .eyebrow { font-size: 13px; opacity:.72; letter-spacing:.08em; margin-bottom: 8px; }
+    .shift-title { font-size: 27px; font-weight: 800; letter-spacing: -.02em; line-height:1.2; }
+    .hero.off .shift-title { display:none; }
+
+    .status-wrap {
+      margin-top:22px; display:flex; align-items:center; justify-content:space-between; gap:14px;
+    }
+    .status { margin-top:0; display:flex; align-items:center; gap:10px; min-width:0; }
+    .status-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; background:#64d7a0; box-shadow:0 0 0 6px rgba(100,215,160,.13); }
+    .hero.out .status-dot { background:#ff6a62; box-shadow:0 0 0 6px rgba(255,106,98,.14); }
+    .hero.off .status-dot { background:#e6eaed; box-shadow:0 0 0 6px rgba(255,255,255,.10); }
+    .status-text { font-size: 21px; font-weight: 750; }
+
+    .status-mascot {
+      position:relative;
+      width:58px; height:44px; flex:0 0 58px;
+      display:flex; align-items:center; justify-content:center;
+      pointer-events:none; user-select:none;
+    }
+    .status-mascot .sprite {
+      display:block; font-size:34px; line-height:1;
+      transform-origin:center bottom;
+      filter:drop-shadow(0 5px 8px rgba(0,0,0,.10));
+    }
+    .status-mascot.off .sprite { animation:pigSleepSway 2.4s ease-in-out infinite; }
+    .status-mascot.standby .sprite { animation:wolfRun 1.7s ease-in-out infinite; }
+    .status-mascot.out .sprite { animation:vehicleMove 1.35s ease-in-out infinite; }
+    .status-mascot.off::after {
+      content:"zZ";
+      position:absolute;
+      margin-left:34px;
+      margin-top:-28px;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:-1px;
+      opacity:.72;
+      animation:sleepZ 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pigSleepSway {
+      0%,100% { transform:translateX(-4px) rotate(-5deg); }
+      50% { transform:translateX(4px) rotate(5deg); }
+    }
+    @keyframes wolfRun {
+      0%,100% { transform:translateX(-5px) translateY(0) rotate(-1deg); }
+      50% { transform:translateX(5px) translateY(-1px) rotate(1deg); }
+    }
+    @keyframes vehicleMove {
+      0%,100% { transform:translateX(-5px) translateY(0); }
+      50% { transform:translateX(5px) translateY(-1px); }
+    }
+    @keyframes sleepZ {
+      0%,100% { transform:translate(0,2px); opacity:.45; }
+      50% { transform:translate(3px,-3px); opacity:.85; }
+    }
+
+    .substatus { margin-top:8px; font-size:12px; opacity:.68; position:relative; z-index:2; white-space:nowrap; overflow:visible; }
+    .off-message {
+      display:none;
+      width:100%;
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.6;
+      opacity:.72;
+      position:relative;
+      z-index:3;
+      white-space:normal;
+      overflow:visible;
+      word-break:keep-all;
+    }
+    .hero.off .off-message { display:block; }
+    .hero.off .substatus { display:none; }
+
+    .section-title { font-size:13px; color:var(--muted); margin:21px 5px 10px; font-weight:700; letter-spacing:.04em; }
+
+    .stats {
+      display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    }
+    .stat {
+      background:var(--card); border:1px solid rgba(255,255,255,.72);
+      border-radius:22px; padding:19px 18px 17px;
+      box-shadow:0 10px 30px rgba(40,47,54,.055);
+      backdrop-filter: blur(14px);
+    }
+    .stat-head { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:13px; font-weight:700; }
+    .icon { width:33px; height:33px; border-radius:11px; display:grid; place-items:center; font-size:17px; }
+    .ems .icon { background:#edf5fa; }
+    .fire .icon { background:#fff0e7; }
+    .num { font-size:38px; line-height:1; font-weight:820; margin-top:17px; letter-spacing:-.04em; }
+    .unit { font-size:12px; color:var(--muted); margin-left:4px; font-weight:600; }
+
+    .mine {
+      margin-top:12px; background:rgba(255,255,255,.83); border-radius:23px;
+      padding:18px; box-shadow:0 10px 30px rgba(40,47,54,.055);
+    }
+    .mine-row { display:flex; align-items:center; justify-content:space-between; padding:8px 2px; }
+    .mine-row + .mine-row { border-top:1px solid var(--line); }
+    .mine-label { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; }
+    .mine-count { font-size:25px; font-weight:820; }
+    .off-copy { color:var(--muted); font-size:14px; line-height:1.6; padding:4px 2px; }
+
+    .latest {
+      margin-top:12px; background:rgba(255,255,255,.58); border:1px solid rgba(255,255,255,.6);
+      border-radius:19px; padding:14px 16px; color:var(--muted); font-size:12px; line-height:1.7;
+    }
+    .latest strong { color:var(--ink); }
+
+    .footer { text-align:center; color:#98a1a9; font-size:11px; margin-top:20px; line-height:1.7; }
+
+    .skeleton { animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.45} 50%{opacity:1} }
+
+    .error-screen {
+      display:none; min-height:72vh; align-items:center; justify-content:center; text-align:center;
+    }
+    .error-screen.show { display:flex; }
+    .error-card { width:100%; padding:28px 18px; }
+    .game {
+      height:150px; position:relative; overflow:hidden; border-bottom:3px solid #aeb5b9;
+      margin:8px 0 22px; touch-action:manipulation;
+    }
+    .dino {
+      position:absolute; left:40px; bottom:3px; font-size:58px; transform-origin:bottom center;
+      user-select:none; cursor:pointer;
+    }
+    .dino.jump { animation:jump .55s ease-out; }
+    @keyframes jump { 0%,100%{bottom:3px; transform:rotate(0)} 45%{bottom:75px; transform:rotate(-8deg)} }
+    .hydrant { position:absolute; right:38px; bottom:5px; font-size:38px; user-select:none; }
+    .cloud { position:absolute; top:18px; right:76px; font-size:30px; opacity:.42; }
+    .error-title { font-size:24px; font-weight:820; }
+    .error-copy { color:var(--muted); font-size:14px; line-height:1.7; margin:9px auto 20px; max-width:310px; }
+    .retry { border:0; border-radius:14px; background:#252f36; color:#fff; font-size:14px; font-weight:750; padding:12px 18px; cursor:pointer; }
+    .tiny { margin-top:12px; font-size:11px; color:#9ba3a9; }
+
+    @media (min-width: 700px) {
+      .app { padding-top:38px; }
+      .hero { min-height:220px; }
+    }
+    .cumulative { margin-top:12px; padding-top:10px; border-top:1px solid rgba(90,105,115,.12); color:var(--muted); font-size:12px; }
+    .cumulative strong, .mine-cumulative strong { color:var(--text); font-size:14px; }
+    .mine-totals { text-align:right; }
+    .mine-cumulative { margin-top:3px; color:var(--muted); font-size:11px; white-space:nowrap; }
+    [hidden] { display:none !important; }
   </style>
 </head>
 <body>
-  <iframe
-    id="dutyApp"
-    src="https://script.google.com/macros/s/AKfycbybu_UsHPDHXHCxfT_1zLsItnlKZe_et8rtFsqCd7Or5HKK9ewlpnz-vDhjw9P-9Vl1/exec"
-    title="勤務狀態"
-    allow="fullscreen"
-  ></iframe>
+  <main class="app">
+    <section id="dashboard">
+      <div class="topbar">
+        <div class="brand">
+          <div class="crest">🚒</div>
+          <div class="brand-text">
+            <strong>勤務狀態</strong>
+
+          </div>
+        </div>
+        <button id="refreshBtn" class="refresh" type="button" aria-label="重新整理" onclick="loadData(true)">↻</button>
+      </div>
+
+      <article id="hero" class="hero">
+        <div class="eyebrow" id="dutyDate">讀取勤務狀態中</div>
+        <div class="shift-title skeleton" id="shiftTitle">資料載入中…</div>
+        <div class="status-wrap">
+          <div class="status">
+            <div class="status-dot"></div>
+            <div class="status-text" id="statusText">正在連線</div>
+          </div>
+          <div id="statusMascot" class="status-mascot" aria-hidden="true">
+            <span class="sprite">🐺</span>
+          </div>
+        </div>
+        <div class="substatus" id="statusDetail">請稍候</div>
+        <div class="off-message" id="offMessage">分隊案件仍會持續更新</div>
+      </article>
+
+      <div class="section-title">今日分隊案件</div>
+      <section class="stats">
+        <article class="stat ems">
+          <div class="stat-head"><div class="icon">🚑</div>救護</div>
+          <div class="num"><span id="stationEms">–</span><span class="unit">件</span></div>
+          <div class="cumulative" id="stationEmsCum" hidden>連上累計 <strong id="stationEmsCumNum">–</strong> 件</div>
+        </article>
+        <article class="stat fire">
+          <div class="stat-head"><div class="icon">🔥</div>火警</div>
+          <div class="num"><span id="stationFire">–</span><span class="unit">件</span></div>
+          <div class="cumulative" id="stationFireCum" hidden>連上累計 <strong id="stationFireCumNum">–</strong> 件</div>
+        </article>
+      </section>
+
+      <div class="section-title">我的出勤</div>
+      <section class="mine" id="mineCard">
+        <div id="workingMine">
+          <div class="mine-row">
+            <div class="mine-label">🚑 救護</div>
+            <div class="mine-totals"><div class="mine-count" id="myEms">–</div><div class="mine-cumulative" id="myEmsCum" hidden>連上累計 <strong id="myEmsCumNum">–</strong> 件</div></div>
+          </div>
+          <div class="mine-row">
+            <div class="mine-label">🔥 火警</div>
+            <div class="mine-totals"><div class="mine-count" id="myFire">–</div><div class="mine-cumulative" id="myFireCum" hidden>連上累計 <strong id="myFireCumNum">–</strong> 件</div></div>
+          </div>
+        </div>
+        <div id="offMine" class="off-copy" style="display:none;">今天沒有值勤，這裡不計個人出勤。</div>
+      </section>
+
+      <section id="latest" class="latest" style="display:none;"></section>
+
+      <div class="footer">
+        <div id="updated">最後更新 –</div>
+        <div>頁面會自動更新，不需要一直重新整理</div>
+      </div>
+    </section>
+
+    <section id="errorScreen" class="error-screen">
+      <div class="error-card">
+        <div class="game" onclick="jumpDino()">
+          <div class="cloud">☁️</div>
+          <div id="dino" class="dino">🦖</div>
+          <div class="hydrant">🧯</div>
+        </div>
+        <div class="error-title">小恐龍暫時收不到訊號</div>
+        <div class="error-copy">可能只是網路或勤務系統打了個盹。點一下恐龍讓牠跳一跳，等一下再試就好。</div>
+        <button class="retry" type="button" onclick="loadData(true)">再試一次</button>
+        <div class="tiny" id="errorUpdated"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const REFRESH_MS = 90 * 1000;
+    let timer = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData(false);
+      timer = setInterval(() => loadData(false), REFRESH_MS);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) loadData(false);
+      });
+    });
+
+    function loadData(manual) {
+      setLoading(true);
+      google.script.run
+        .withSuccessHandler(renderData)
+        .withFailureHandler(() => showError(''))
+        .getDashboardData();
+    }
+
+    function renderData(data) {
+      setLoading(false);
+      if (!data || data.ok === false) {
+        showError(data && data.lastUpdatedText ? data.lastUpdatedText : '');
+        return;
+      }
+
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('errorScreen').classList.remove('show');
+
+      const hero = document.getElementById('hero');
+      hero.classList.toggle('out', data.statusCode === 'OUT');
+      hero.classList.toggle('off', data.statusCode === 'OFF');
+
+      setText('dutyDate', '勤務日 ' + data.dutyDateText + ' · 08:00 起');
+      setText('shiftTitle', data.shiftTitle);
+      document.getElementById('shiftTitle').classList.remove('skeleton');
+      setText('statusText', stripStatusEmoji(data.statusText));
+
+      let detail = '目前沒有進行中的火警或救護案件';
+      if (data.statusCode === 'OUT' && (data.activeMyCase || data.latestMyCase)) {
+        const active = data.activeMyCase || data.latestMyCase;
+        detail = active.typeText + ' · ' + shortTime(active.reportTime) + ' 出勤';
+      } else if (data.statusCode === 'OFF') {
+        detail = '';
+      }
+      setText('statusDetail', detail);
+      setText('offMessage', '分隊案件仍會持續更新');
+      renderStatusMascot(data);
+
+      setText('stationEms', data.station.ems);
+      setText('stationFire', data.station.fire);
+      setText('myEms', data.me.ems);
+      setText('myFire', data.me.fire);
+
+      const showCumulative = data.isWorking && data.consecutiveDays > 1 &&
+        data.cumulativeStation && data.cumulativeMe;
+      [
+        ['stationEmsCum', 'stationEmsCumNum', data.cumulativeStation && data.cumulativeStation.ems],
+        ['stationFireCum', 'stationFireCumNum', data.cumulativeStation && data.cumulativeStation.fire],
+        ['myEmsCum', 'myEmsCumNum', data.cumulativeMe && data.cumulativeMe.ems],
+        ['myFireCum', 'myFireCumNum', data.cumulativeMe && data.cumulativeMe.fire]
+      ].forEach(function(row) {
+        document.getElementById(row[0]).hidden = !showCumulative;
+        if (showCumulative) setText(row[1], row[2]);
+      });
+
+      document.getElementById('workingMine').style.display = data.isWorking ? 'block' : 'none';
+      document.getElementById('offMine').style.display = data.isWorking ? 'none' : 'block';
+
+      const latest = document.getElementById('latest');
+      const latestDisplay = data.statusCode === 'OUT' && data.activeMyCase
+        ? data.activeMyCase
+        : data.latestMyCase;
+
+      if (data.isWorking && latestDisplay) {
+        if (data.statusCode === 'OUT' && !latestDisplay.returnTime) {
+          latest.innerHTML = '<strong>目前出勤中</strong>　' + escapeHtml(latestDisplay.typeText) +
+            ' · ' + escapeHtml(shortDateTime(latestDisplay.reportTime)) + ' 出勤';
+        } else if (latestDisplay.returnTime) {
+          latest.innerHTML = '<strong>最近一次出勤</strong>　' + escapeHtml(latestDisplay.typeText) +
+            ' · ' + escapeHtml(shortDateTime(latestDisplay.reportTime)) +
+            '<br>已於 ' + escapeHtml(shortTime(latestDisplay.returnTime)) + ' 返隊';
+        }
+        latest.style.display = 'block';
+      } else {
+        latest.style.display = 'none';
+        latest.innerHTML = '';
+      }
+
+      setText('updated', '最後更新 ' + data.lastUpdatedText);
+    }
+
+    function renderStatusMascot(data) {
+      const box = document.getElementById('statusMascot');
+      const sprite = box.querySelector('.sprite');
+
+      box.classList.remove('off', 'standby', 'out');
+
+      if (data.statusCode === 'OFF') {
+        box.classList.add('off');
+        sprite.textContent = '🐷';
+        return;
+      }
+
+      if (data.statusCode === 'OUT') {
+        box.classList.add('out');
+        const active = data.activeMyCase || data.latestMyCase;
+        sprite.textContent = active && active.type === 'FIRE' ? '🚒' : '🚑';
+        return;
+      }
+
+      box.classList.add('standby');
+      sprite.textContent = '🐺';
+    }
+
+    function showError(time) {
+      setLoading(false);
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('errorScreen').classList.add('show');
+      setText('errorUpdated', time ? '最後嘗試 ' + time : '點「再試一次」重新連線');
+    }
+
+    function setLoading(value) {
+      document.getElementById('refreshBtn').classList.toggle('loading', !!value);
+    }
+
+    function jumpDino() {
+      const dino = document.getElementById('dino');
+      if (dino.classList.contains('jump')) return;
+      dino.classList.add('jump');
+      setTimeout(() => dino.classList.remove('jump'), 560);
+    }
+
+    function stripStatusEmoji(text) {
+      return String(text || '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+    }
+
+    function shortTime(text) {
+      const m = String(text || '').match(/(\d{2}:\d{2})(?::\d{2})?$/);
+      return m ? m[1] : text || '';
+    }
+
+    function shortDateTime(text) {
+      const m = String(text || '').match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}:\d{2})/);
+      return m ? m[2] + '/' + m[3] + ' ' + m[4] : text || '';
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value == null ? '' : String(value);
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
 </body>
 </html>
